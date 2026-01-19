@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malen nach Zahlen</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Malen nach Zahlen</h1>
+            <p>Klicken Sie auf eine Region und wählen Sie die richtige Farbe!</p>
+        </header>
+
+        <div class="game-container">
+            <div class="canvas-container">
+                <svg id="canvas" width="600" height="600"></svg>
+            </div>
+
+            <div class="sidebar">
+                <div class="color-palette">
+                    <h2>Farbpalette</h2>
+                    <div id="palette"></div>
+                </div>
+
+                <div class="stats">
+                    <h3>Fortschritt</h3>
+                    <div class="progress-bar">
+                        <div id="progress" class="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">0% fertig</p>
+                </div>
+
+                <div class="controls">
+                    <button id="reset-btn" class="btn">Neu starten</button>
+                    <button id="hint-btn" class="btn">Hinweis</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="completion-message" class="completion-message hidden">
+            <div class="message-content">
+                <h2>🎉 Glückwunsch!</h2>
+                <p>Sie haben das Bild fertiggestellt!</p>
+                <button id="new-game-btn" class="btn">Neues Spiel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
