@@ -2,48 +2,122 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Malen nach Zahlen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Snake</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎨 Malen nach Zahlen</h1>
-            <p>Klicken Sie auf eine Region und wählen Sie die richtige Farbe!</p>
-        </header>
-
-        <div class="game-container">
-            <div class="canvas-container">
-                <svg id="canvas" width="600" height="600"></svg>
-            </div>
-
-            <div class="sidebar">
-                <div class="color-palette">
-                    <h2>Farbpalette</h2>
-                    <div id="palette"></div>
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <div class="screen-content">
+                <div class="logo">
+                    <span class="logo-icon">&#9673;</span>
+                    <h1>SNAKE</h1>
                 </div>
-
-                <div class="stats">
-                    <h3>Fortschritt</h3>
-                    <div class="progress-bar">
-                        <div id="progress" class="progress-fill"></div>
+                <p class="tagline">Klassisch. Elegant. Unendlich.</p>
+                <div class="start-controls">
+                    <button id="btn-start" class="btn btn-primary">Spiel starten</button>
+                    <div class="difficulty-selector">
+                        <span class="label">Schwierigkeit</span>
+                        <div class="difficulty-options">
+                            <button class="diff-btn" data-speed="easy">Leicht</button>
+                            <button class="diff-btn active" data-speed="normal">Normal</button>
+                            <button class="diff-btn" data-speed="hard">Schwer</button>
+                        </div>
                     </div>
-                    <p id="progress-text">0% fertig</p>
                 </div>
-
-                <div class="controls">
-                    <button id="reset-btn" class="btn">Neu starten</button>
-                    <button id="hint-btn" class="btn">Hinweis</button>
+                <div class="controls-hint">
+                    <div class="hint-row">
+                        <kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd>
+                        <span>oder</span>
+                        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                    </div>
+                    <div class="hint-row">
+                        <kbd>Space</kbd> <span>Pause</span>
+                    </div>
+                    <p class="mobile-hint">Auf Mobilgeraeten: Wische zum Steuern</p>
                 </div>
             </div>
         </div>
 
-        <div id="completion-message" class="completion-message hidden">
-            <div class="message-content">
-                <h2>🎉 Glückwunsch!</h2>
-                <p>Sie haben das Bild fertiggestellt!</p>
-                <button id="new-game-btn" class="btn">Neues Spiel</button>
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-hud">
+                <div class="hud-left">
+                    <div class="stat">
+                        <span class="stat-label">Punkte</span>
+                        <span id="score" class="stat-value">0</span>
+                    </div>
+                </div>
+                <div class="hud-center">
+                    <div class="stat">
+                        <span class="stat-label">Level</span>
+                        <span id="level" class="stat-value">1</span>
+                    </div>
+                </div>
+                <div class="hud-right">
+                    <div class="stat">
+                        <span class="stat-label">Rekord</span>
+                        <span id="highscore" class="stat-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="game-canvas"></canvas>
+                <div id="pause-overlay" class="overlay hidden">
+                    <div class="overlay-content">
+                        <h2>Pause</h2>
+                        <p>Druecke <kbd>Space</kbd> zum Fortsetzen</p>
+                        <button id="btn-resume" class="btn btn-primary">Fortsetzen</button>
+                    </div>
+                </div>
+                <div id="countdown-overlay" class="overlay hidden">
+                    <span id="countdown-number" class="countdown-number">3</span>
+                </div>
+            </div>
+
+            <div class="game-toolbar">
+                <button id="btn-pause" class="toolbar-btn" title="Pause (Space)">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+                <button id="btn-sound" class="toolbar-btn" title="Sound An/Aus">
+                    <svg id="sound-on-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <svg id="sound-off-icon" class="hidden" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                </button>
+                <button id="btn-quit" class="toolbar-btn" title="Beenden">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <div class="screen-content">
+                <h2 id="gameover-title" class="gameover-title">Game Over</h2>
+                <div class="final-stats">
+                    <div class="final-stat">
+                        <span class="final-stat-value" id="final-score">0</span>
+                        <span class="final-stat-label">Punkte</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="final-stat-value" id="final-length">0</span>
+                        <span class="final-stat-label">Laenge</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="final-stat-value" id="final-level">1</span>
+                        <span class="final-stat-label">Level</span>
+                    </div>
+                </div>
+                <div id="new-highscore" class="new-highscore hidden">Neuer Rekord!</div>
+                <div class="gameover-actions">
+                    <button id="btn-retry" class="btn btn-primary">Nochmal spielen</button>
+                    <button id="btn-menu" class="btn btn-secondary">Hauptmenue</button>
+                </div>
             </div>
         </div>
     </div>
