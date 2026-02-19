@@ -1,297 +1,451 @@
-class PaintByNumbers {
+class BioDefenseGame {
     constructor() {
-        this.canvas = document.getElementById('canvas');
-        this.palette = document.getElementById('palette');
-        this.progressBar = document.getElementById('progress');
-        this.progressText = document.getElementById('progress-text');
-        this.completionMessage = document.getElementById('completion-message');
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
 
-        this.selectedColor = null;
-        this.regions = [];
-        this.colors = [];
+        this.ui = {
+            health: document.getElementById('base-health'),
+            credits: document.getElementById('credits'),
+            wave: document.getElementById('wave'),
+            kills: document.getElementById('kills'),
+            towerList: document.getElementById('tower-list'),
+            selectedTowerText: document.getElementById('selected-tower-text'),
+            upgradeBtn: document.getElementById('upgrade-btn'),
+            sellBtn: document.getElementById('sell-btn'),
+            message: document.getElementById('floating-message'),
+            modal: document.getElementById('modal'),
+            modalTitle: document.getElementById('modal-title'),
+            modalText: document.getElementById('modal-text')
+        };
 
-        this.initColors();
-        this.initRegions();
-        this.renderPalette();
-        this.renderCanvas();
-        this.attachEventListeners();
-    }
-
-    initColors() {
-        this.colors = [
-            { number: 1, color: '#FF6B6B', name: 'Rot' },
-            { number: 2, color: '#4ECDC4', name: 'Türkis' },
-            { number: 3, color: '#FFE66D', name: 'Gelb' },
-            { number: 4, color: '#95E1D3', name: 'Mint' },
-            { number: 5, color: '#F38181', name: 'Rosa' },
-            { number: 6, color: '#AA96DA', name: 'Lila' },
-        ];
-    }
-
-    initRegions() {
-        // Create a simple geometric pattern with numbered regions
-        const patterns = [
-            // Center star
-            { x: 300, y: 200, width: 150, height: 120, number: 1, type: 'rect' },
-            { x: 200, y: 250, width: 120, height: 150, number: 2, type: 'rect' },
-            { x: 380, y: 250, width: 120, height: 150, number: 3, type: 'rect' },
-
-            // Top sections
-            { x: 150, y: 100, width: 140, height: 100, number: 4, type: 'rect' },
-            { x: 310, y: 100, width: 140, height: 100, number: 5, type: 'rect' },
-
-            // Bottom sections
-            { x: 150, y: 420, width: 140, height: 100, number: 6, type: 'rect' },
-            { x: 310, y: 420, width: 140, height: 100, number: 1, type: 'rect' },
-
-            // Side sections
-            { x: 80, y: 250, width: 100, height: 120, number: 3, type: 'rect' },
-            { x: 520, y: 250, width: 100, height: 120, number: 2, type: 'rect' },
-
-            // Corner sections
-            { x: 100, y: 100, width: 80, height: 80, number: 2, type: 'circle' },
-            { x: 520, y: 100, width: 80, height: 80, number: 4, type: 'circle' },
-            { x: 100, y: 520, width: 80, height: 80, number: 5, type: 'circle' },
-            { x: 520, y: 520, width: 80, height: 80, number: 6, type: 'circle' },
-
-            // Additional small sections
-            { x: 250, y: 150, width: 70, height: 70, number: 6, type: 'circle' },
-            { x: 380, y: 150, width: 70, height: 70, number: 1, type: 'circle' },
-            { x: 250, y: 400, width: 70, height: 70, number: 4, type: 'circle' },
-            { x: 380, y: 400, width: 70, height: 70, number: 3, type: 'circle' },
+        this.path = [
+            { x: 0, y: 90 }, { x: 220, y: 90 }, { x: 220, y: 210 },
+            { x: 420, y: 210 }, { x: 420, y: 360 }, { x: 670, y: 360 },
+            { x: 670, y: 150 }, { x: 900, y: 150 }
         ];
 
-        this.regions = patterns.map((pattern, index) => ({
-            id: index,
-            ...pattern,
-            filled: false,
-            currentColor: null
-        }));
+        this.towerSpots = [
+            { x: 145, y: 180 }, { x: 300, y: 125 }, { x: 350, y: 295 },
+            { x: 540, y: 250 }, { x: 590, y: 430 }, { x: 740, y: 265 },
+            { x: 760, y: 80 }, { x: 490, y: 120 }
+        ];
+
+        this.towerTypes = [
+            { id: 'acid', name: 'Säure-Turm', cost: 70, range: 130, rate: 0.8, damage: 20, color: '#7CFC00' },
+            { id: 'pulse', name: 'EMP-Turm', cost: 100, range: 110, rate: 0.5, damage: 35, color: '#2fd3ff' },
+            { id: 'flame', name: 'Flammen-Turm', cost: 130, range: 90, rate: 1.6, damage: 14, color: '#ff9f1c' }
+        ];
+
+        this.resetGame();
+        this.bindEvents();
+        this.renderTowerButtons();
+        this.loop(0);
     }
 
-    renderPalette() {
-        this.palette.innerHTML = '';
+    resetGame() {
+        this.baseHealth = 20;
+        this.credits = 180;
+        this.wave = 0;
+        this.kills = 0;
+        this.speed = 1;
+        this.isPaused = false;
+        this.isGameOver = false;
 
-        this.colors.forEach(colorData => {
-            const colorItem = document.createElement('div');
-            colorItem.className = 'color-item';
-            colorItem.dataset.number = colorData.number;
+        this.enemies = [];
+        this.bullets = [];
+        this.towers = [];
+        this.selectedTowerType = this.towerTypes[0];
+        this.selectedPlacedTower = null;
 
-            const swatch = document.createElement('div');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = colorData.color;
+        this.spawnQueue = [];
+        this.lastTime = 0;
 
-            const number = document.createElement('div');
-            number.className = 'color-number';
-            number.textContent = colorData.number;
+        this.updateHUD();
+        this.hideModal();
+        this.selectTowerType(this.selectedTowerType.id);
+    }
 
-            colorItem.appendChild(swatch);
-            colorItem.appendChild(number);
+    bindEvents() {
+        document.getElementById('start-wave-btn').addEventListener('click', () => this.startWave());
+        document.getElementById('pause-btn').addEventListener('click', (event) => {
+            this.isPaused = !this.isPaused;
+            event.target.textContent = this.isPaused ? 'Fortsetzen' : 'Pause';
+        });
 
-            colorItem.addEventListener('click', () => {
-                document.querySelectorAll('.color-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                colorItem.classList.add('selected');
-                this.selectedColor = colorData.number;
+        document.getElementById('speed-btn').addEventListener('click', (event) => {
+            this.speed = this.speed === 1 ? 2 : 1;
+            event.target.textContent = this.speed === 1 ? '2x Tempo' : '1x Tempo';
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => this.resetGame());
+        document.getElementById('modal-button').addEventListener('click', () => this.resetGame());
+
+        this.ui.upgradeBtn.addEventListener('click', () => this.upgradeTower());
+        this.ui.sellBtn.addEventListener('click', () => this.sellTower());
+
+        this.canvas.addEventListener('click', (event) => this.handleCanvasClick(event));
+    }
+
+    renderTowerButtons() {
+        this.ui.towerList.innerHTML = '';
+        this.towerTypes.forEach((tower) => {
+            const btn = document.createElement('button');
+            btn.className = 'tower-btn';
+            btn.dataset.id = tower.id;
+            btn.innerHTML = `<strong>${tower.name}</strong><br><small>${tower.cost} Cr • DMG ${tower.damage}</small>`;
+            btn.addEventListener('click', () => this.selectTowerType(tower.id));
+            this.ui.towerList.appendChild(btn);
+        });
+    }
+
+    selectTowerType(typeId) {
+        this.selectedPlacedTower = null;
+        this.selectedTowerType = this.towerTypes.find((t) => t.id === typeId);
+        this.ui.towerList.querySelectorAll('.tower-btn').forEach((btn) => {
+            btn.classList.toggle('selected', btn.dataset.id === typeId);
+        });
+        this.updateSelectedTowerPanel();
+    }
+
+    startWave() {
+        if (this.spawnQueue.length > 0 || this.isGameOver) {
+            return;
+        }
+
+        this.wave += 1;
+        const count = 8 + this.wave * 3;
+        for (let i = 0; i < count; i += 1) {
+            this.spawnQueue.push({
+                delay: i * 0.8,
+                hp: 50 + this.wave * 15,
+                speed: 45 + this.wave * 4,
+                reward: 12 + this.wave
             });
+        }
+        this.showMessage(`Welle ${this.wave} gestartet!`);
+        this.updateHUD();
+    }
 
-            this.palette.appendChild(colorItem);
+    spawnEnemy(data) {
+        this.enemies.push({
+            x: this.path[0].x,
+            y: this.path[0].y,
+            hp: data.hp,
+            maxHp: data.hp,
+            speed: data.speed,
+            reward: data.reward,
+            pathIndex: 0,
+            radius: 14
         });
     }
 
-    renderCanvas() {
-        this.canvas.innerHTML = '';
+    handleCanvasClick(event) {
+        if (this.isGameOver) return;
 
-        this.regions.forEach(region => {
-            const colorData = this.colors.find(c => c.number === region.number);
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
+        const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
 
-            let element;
-            if (region.type === 'circle') {
-                element = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                element.setAttribute('cx', region.x + region.width / 2);
-                element.setAttribute('cy', region.y + region.height / 2);
-                element.setAttribute('r', region.width / 2);
-            } else {
-                element = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                element.setAttribute('x', region.x);
-                element.setAttribute('y', region.y);
-                element.setAttribute('width', region.width);
-                element.setAttribute('height', region.height);
-                element.setAttribute('rx', 10);
-            }
-
-            element.setAttribute('class', 'region');
-            element.setAttribute('data-region-id', region.id);
-
-            if (region.filled) {
-                element.setAttribute('fill', colorData.color);
-                element.classList.add('filled');
-            } else {
-                element.setAttribute('fill', '#f5f5f5');
-            }
-
-            element.addEventListener('click', () => this.fillRegion(region.id));
-
-            this.canvas.appendChild(element);
-
-            // Add number label
-            if (!region.filled) {
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('class', 'region-number');
-
-                if (region.type === 'circle') {
-                    text.setAttribute('x', region.x + region.width / 2);
-                    text.setAttribute('y', region.y + region.height / 2);
-                } else {
-                    text.setAttribute('x', region.x + region.width / 2);
-                    text.setAttribute('y', region.y + region.height / 2);
-                }
-
-                text.textContent = region.number;
-                this.canvas.appendChild(text);
-            }
-        });
-    }
-
-    fillRegion(regionId) {
-        const region = this.regions.find(r => r.id === regionId);
-
-        if (!region || region.filled) {
+        const clickedTower = this.towers.find((tower) => Math.hypot(tower.x - x, tower.y - y) <= 22);
+        if (clickedTower) {
+            this.selectedPlacedTower = clickedTower;
+            this.updateSelectedTowerPanel();
             return;
         }
 
-        if (this.selectedColor === null) {
-            this.showMessage('Bitte wählen Sie zuerst eine Farbe aus der Palette!');
+        const spot = this.towerSpots.find((point) => Math.hypot(point.x - x, point.y - y) <= 26);
+        if (!spot) return;
+
+        const occupied = this.towers.some((tower) => tower.spotX === spot.x && tower.spotY === spot.y);
+        if (occupied) {
+            this.showMessage('Dieser Slot ist bereits belegt.');
             return;
         }
 
-        if (this.selectedColor !== region.number) {
-            this.showMessage('Falsche Farbe! Versuchen Sie es mit Farbe ' + region.number);
-            this.shakeRegion(regionId);
+        if (this.credits < this.selectedTowerType.cost) {
+            this.showMessage('Nicht genug Credits.');
             return;
         }
 
-        region.filled = true;
-        region.currentColor = this.selectedColor;
+        this.credits -= this.selectedTowerType.cost;
+        this.towers.push({
+            ...this.selectedTowerType,
+            x: spot.x,
+            y: spot.y,
+            spotX: spot.x,
+            spotY: spot.y,
+            cooldown: 0,
+            level: 1,
+            sellValue: Math.round(this.selectedTowerType.cost * 0.7)
+        });
 
-        this.renderCanvas();
-        this.updateProgress();
-        this.checkCompletion();
-        this.updatePalette();
+        this.showMessage(`${this.selectedTowerType.name} gebaut.`);
+        this.updateHUD();
     }
 
-    shakeRegion(regionId) {
-        const element = this.canvas.querySelector(`[data-region-id="${regionId}"]`);
-        element.style.animation = 'shake 0.5s';
-        setTimeout(() => {
-            element.style.animation = '';
-        }, 500);
+    upgradeTower() {
+        const tower = this.selectedPlacedTower;
+        if (!tower) return;
+
+        const price = Math.round(tower.cost * (0.75 + tower.level * 0.35));
+        if (this.credits < price) {
+            this.showMessage('Upgrade zu teuer.');
+            return;
+        }
+
+        this.credits -= price;
+        tower.level += 1;
+        tower.damage = Math.round(tower.damage * 1.28);
+        tower.range += 9;
+        tower.sellValue += Math.round(price * 0.7);
+        this.showMessage(`${tower.name} auf Level ${tower.level}.`);
+        this.updateHUD();
+        this.updateSelectedTowerPanel();
     }
 
-    showMessage(message) {
-        // Create temporary message
-        const msg = document.createElement('div');
-        msg.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 999;
-            font-weight: bold;
-            color: #333;
-        `;
-        msg.textContent = message;
-        document.body.appendChild(msg);
+    sellTower() {
+        const tower = this.selectedPlacedTower;
+        if (!tower) return;
 
-        setTimeout(() => {
-            msg.remove();
-        }, 2000);
+        this.credits += tower.sellValue;
+        this.towers = this.towers.filter((entry) => entry !== tower);
+        this.selectedPlacedTower = null;
+        this.showMessage('Turm verkauft.');
+        this.updateHUD();
+        this.updateSelectedTowerPanel();
     }
 
-    updateProgress() {
-        const total = this.regions.length;
-        const filled = this.regions.filter(r => r.filled).length;
-        const percentage = Math.round((filled / total) * 100);
+    updateSelectedTowerPanel() {
+        if (!this.selectedPlacedTower) {
+            this.ui.selectedTowerText.textContent = this.selectedTowerType
+                ? `${this.selectedTowerType.name} ausgewählt (${this.selectedTowerType.cost} Cr).`
+                : 'Kein Turm ausgewählt';
+            this.ui.upgradeBtn.disabled = true;
+            this.ui.sellBtn.disabled = true;
+            return;
+        }
 
-        this.progressBar.style.width = percentage + '%';
-        this.progressText.textContent = percentage + '% fertig';
+        const tower = this.selectedPlacedTower;
+        const price = Math.round(tower.cost * (0.75 + tower.level * 0.35));
+        this.ui.selectedTowerText.textContent = `${tower.name} • Level ${tower.level} • DMG ${tower.damage} • Reichweite ${tower.range} • Upgrade ${price} Cr`;
+        this.ui.upgradeBtn.disabled = false;
+        this.ui.sellBtn.disabled = false;
     }
 
-    updatePalette() {
-        this.colors.forEach(colorData => {
-            const remaining = this.regions.filter(r =>
-                r.number === colorData.number && !r.filled
-            ).length;
+    updateHUD() {
+        this.ui.health.textContent = this.baseHealth;
+        this.ui.credits.textContent = this.credits;
+        this.ui.wave.textContent = this.wave;
+        this.ui.kills.textContent = this.kills;
+    }
 
-            const colorItem = this.palette.querySelector(`[data-number="${colorData.number}"]`);
-            if (remaining === 0) {
-                colorItem.classList.add('completed');
+    showMessage(text) {
+        this.ui.message.textContent = text;
+        this.ui.message.classList.add('show');
+        clearTimeout(this.messageTimer);
+        this.messageTimer = setTimeout(() => this.ui.message.classList.remove('show'), 1300);
+    }
+
+    endGame(win = false) {
+        this.isGameOver = true;
+        this.ui.modalTitle.textContent = win ? 'Sieg! Labor gesichert' : 'Niederlage';
+        this.ui.modalText.textContent = win
+            ? `Du hast ${this.wave} Wellen überlebt und ${this.kills} Zombies eliminiert.`
+            : `Die Zombies haben das Labor überrannt. Erreichte Welle: ${this.wave}.`;
+        this.ui.modal.classList.remove('hidden');
+    }
+
+    hideModal() {
+        this.ui.modal.classList.add('hidden');
+    }
+
+    update(dt) {
+        if (this.isPaused || this.isGameOver) {
+            return;
+        }
+
+        const scaledDt = dt * this.speed;
+
+        this.spawnQueue.forEach((item) => {
+            item.delay -= scaledDt;
+        });
+        while (this.spawnQueue.length > 0 && this.spawnQueue[0].delay <= 0) {
+            this.spawnEnemy(this.spawnQueue.shift());
+        }
+
+        this.enemies.forEach((enemy) => {
+            const next = this.path[enemy.pathIndex + 1];
+            if (!next) return;
+
+            const dx = next.x - enemy.x;
+            const dy = next.y - enemy.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 2) {
+                enemy.pathIndex += 1;
+                return;
+            }
+            enemy.x += (dx / dist) * enemy.speed * scaledDt;
+            enemy.y += (dy / dist) * enemy.speed * scaledDt;
+        });
+
+        this.enemies = this.enemies.filter((enemy) => {
+            const reachedEnd = enemy.pathIndex >= this.path.length - 1;
+            if (!reachedEnd) return true;
+            this.baseHealth -= 1;
+            if (this.baseHealth <= 0) {
+                this.baseHealth = 0;
+                this.updateHUD();
+                this.endGame(false);
+            }
+            return false;
+        });
+
+        this.towers.forEach((tower) => {
+            tower.cooldown -= scaledDt;
+            if (tower.cooldown > 0) return;
+
+            const target = this.enemies.find((enemy) => Math.hypot(enemy.x - tower.x, enemy.y - tower.y) <= tower.range);
+            if (!target) return;
+
+            tower.cooldown = 1 / tower.rate;
+            this.bullets.push({
+                x: tower.x,
+                y: tower.y,
+                target,
+                speed: 420,
+                damage: tower.damage,
+                color: tower.color,
+                radius: 4
+            });
+        });
+
+        this.bullets = this.bullets.filter((bullet) => {
+            if (!this.enemies.includes(bullet.target)) {
+                return false;
+            }
+
+            const dx = bullet.target.x - bullet.x;
+            const dy = bullet.target.y - bullet.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 10) {
+                bullet.target.hp -= bullet.damage;
+                return false;
+            }
+
+            bullet.x += (dx / dist) * bullet.speed * scaledDt;
+            bullet.y += (dy / dist) * bullet.speed * scaledDt;
+            return true;
+        });
+
+        const before = this.enemies.length;
+        this.enemies = this.enemies.filter((enemy) => enemy.hp > 0);
+        const killed = before - this.enemies.length;
+        if (killed > 0) {
+            this.kills += killed;
+            this.credits += killed * (12 + Math.floor(this.wave / 2));
+        }
+
+        if (this.wave >= 10 && this.enemies.length === 0 && this.spawnQueue.length === 0) {
+            this.endGame(true);
+        }
+
+        this.updateHUD();
+    }
+
+    drawPath() {
+        const { ctx } = this;
+        ctx.strokeStyle = '#3f5ba8';
+        ctx.lineWidth = 44;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(this.path[0].x, this.path[0].y);
+        for (let i = 1; i < this.path.length; i += 1) {
+            ctx.lineTo(this.path[i].x, this.path[i].y);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = '#99afe9';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    drawTowerSpots() {
+        this.towerSpots.forEach((spot) => {
+            const occupied = this.towers.some((tower) => tower.spotX === spot.x && tower.spotY === spot.y);
+            this.ctx.beginPath();
+            this.ctx.arc(spot.x, spot.y, 20, 0, Math.PI * 2);
+            this.ctx.fillStyle = occupied ? '#2a3154' : 'rgba(255,255,255,0.06)';
+            this.ctx.fill();
+            this.ctx.strokeStyle = occupied ? '#6f7fc6' : 'rgba(255,255,255,0.25)';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+        });
+    }
+
+    render() {
+        const { ctx } = this;
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.drawPath();
+        this.drawTowerSpots();
+
+        this.towers.forEach((tower) => {
+            ctx.beginPath();
+            ctx.arc(tower.x, tower.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = tower.color;
+            ctx.fill();
+            ctx.strokeStyle = '#0f142b';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            if (tower === this.selectedPlacedTower) {
+                ctx.beginPath();
+                ctx.arc(tower.x, tower.y, tower.range, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(47, 211, 255, 0.28)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
             }
         });
-    }
 
-    checkCompletion() {
-        if (this.regions.every(r => r.filled)) {
-            setTimeout(() => {
-                this.completionMessage.classList.remove('hidden');
-            }, 500);
-        }
-    }
+        this.enemies.forEach((enemy) => {
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#93ff75';
+            ctx.fill();
 
-    reset() {
-        this.regions.forEach(region => {
-            region.filled = false;
-            region.currentColor = null;
+            ctx.fillStyle = '#0a0f1f';
+            ctx.fillRect(enemy.x - 16, enemy.y - 24, 32, 4);
+            ctx.fillStyle = '#ff4d6d';
+            ctx.fillRect(enemy.x - 16, enemy.y - 24, 32 * (enemy.hp / enemy.maxHp), 4);
         });
-        this.selectedColor = null;
-        this.completionMessage.classList.add('hidden');
-        this.renderCanvas();
-        this.renderPalette();
-        this.updateProgress();
+
+        this.bullets.forEach((bullet) => {
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+            ctx.fillStyle = bullet.color;
+            ctx.fill();
+        });
+
+        ctx.fillStyle = '#c1caee';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillText('Labor-Eingang', 6, 74);
+        ctx.fillText('Evakuierungszone', 760, 124);
     }
 
-    hint() {
-        const unfilledRegions = this.regions.filter(r => !r.filled);
-        if (unfilledRegions.length === 0) return;
+    loop(timestamp) {
+        const dt = Math.min((timestamp - this.lastTime) / 1000, 0.032);
+        this.lastTime = timestamp;
 
-        const randomRegion = unfilledRegions[Math.floor(Math.random() * unfilledRegions.length)];
-
-        // Highlight the region briefly
-        const element = this.canvas.querySelector(`[data-region-id="${randomRegion.id}"]`);
-        const originalFill = element.getAttribute('fill');
-
-        element.setAttribute('fill', '#FFD700');
-        setTimeout(() => {
-            element.setAttribute('fill', originalFill);
-        }, 1000);
-
-        this.showMessage(`Hinweis: Suchen Sie nach Region mit Nummer ${randomRegion.number}`);
-    }
-
-    attachEventListeners() {
-        document.getElementById('reset-btn').addEventListener('click', () => this.reset());
-        document.getElementById('hint-btn').addEventListener('click', () => this.hint());
-        document.getElementById('new-game-btn').addEventListener('click', () => this.reset());
+        this.update(dt);
+        this.render();
+        window.requestAnimationFrame((time) => this.loop(time));
     }
 }
 
-// Add shake animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-10px); }
-        75% { transform: translateX(10px); }
-    }
-`;
-document.head.appendChild(style);
-
-// Initialize game when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new PaintByNumbers();
+window.addEventListener('DOMContentLoaded', () => {
+    new BioDefenseGame();
 });

@@ -1,106 +1,37 @@
-# 🎨 Malen nach Zahlen - Paint by Numbers
+# 🧪 BioDefense: Zombie Outbreak (Web Edition)
 
-Eine interaktive Web-Anwendung zum Malen nach Zahlen, entwickelt mit HTML, CSS und JavaScript.
+Eine spielbare Browser-Version im Stil des alten iOS-Spiels **BioDefense: Zombie Outbreak** – modernisiert mit klarer UX, responsivem Layout und direkter Steuerung.
 
 ## Features
 
-- **Interaktive Farbpalette**: 6 verschiedene Farben mit nummerierten Bereichen
-- **Echtzeit-Fortschrittsanzeige**: Verfolgen Sie Ihren Fortschritt mit einer visuellen Fortschrittsleiste
-- **Intelligente Validierung**: Das Spiel überprüft, ob Sie die richtige Farbe für jeden Bereich verwenden
-- **Hinweis-System**: Wenn Sie nicht weiterkommen, können Sie einen Hinweis anfordern
-- **Responsives Design**: Funktioniert auf Desktop und mobilen Geräten
-- **Visuelle Effekte**: Animationen und Feedback für ein besseres Spielerlebnis
+- Tower-Defense Gameplay mit Zombie-Wellen
+- Drei Turmtypen (Säure, EMP, Flammen)
+- Upgrade- und Verkaufssystem für gesetzte Türme
+- Wellenstart per Knopf, Pause, Geschwindigkeitsmodus (1x/2x)
+- Ressourcen-Management (Leben, Credits, Kills)
+- Runde endet bei 0 Leben oder Sieg nach Welle 10
 
-## Installation
+## Start
 
-1. Klonen Sie das Repository:
 ```bash
-git clone <repository-url>
-cd Test
+python -m http.server 8000
 ```
 
-2. Öffnen Sie die `index.html` Datei in Ihrem Browser:
-   - Doppelklick auf die Datei, oder
-   - Starten Sie einen lokalen Webserver:
-   ```bash
-   python -m http.server 8000
-   ```
-   Dann öffnen Sie `http://localhost:8000` in Ihrem Browser
+Dann im Browser öffnen:
 
-## Spielanleitung
+- `http://localhost:8000`
 
-1. **Farbe auswählen**: Klicken Sie auf eine Farbe in der Palette auf der rechten Seite
-2. **Bereich ausfüllen**: Klicken Sie auf einen nummerierten Bereich auf dem Canvas
-3. **Richtige Farbe**: Wenn die Farbe mit der Nummer übereinstimmt, wird der Bereich ausgefüllt
-4. **Falsche Farbe**: Wenn die Farbe nicht passt, erhalten Sie eine Fehlermeldung
-5. **Fortschritt**: Beobachten Sie Ihren Fortschritt in der Fortschrittsanzeige
-6. **Fertigstellung**: Wenn alle Bereiche ausgefüllt sind, erscheint eine Glückwunsch-Nachricht
+## Steuerung
 
-## Bedienelemente
+1. Turmtyp rechts auswählen.
+2. Auf einen freien Turm-Slot im Spielfeld klicken.
+3. Bereits platzierten Turm anklicken, um Upgrade/Verkauf zu nutzen.
+4. "Nächste Welle starten" drücken.
 
-- **Neu starten**: Setzt das Spiel zurück und startet von vorne
-- **Hinweis**: Hebt einen zufälligen unausgefüllten Bereich hervor
+## Tech Stack
 
-## Technologie-Stack
+- HTML5 Canvas
+- CSS3
+- Vanilla JavaScript
 
-- **HTML5**: Struktur der Anwendung
-- **CSS3**: Styling und Animationen
-- **JavaScript (Vanilla)**: Spiellogik und Interaktivität
-- **SVG**: Vektorgrafiken für das Canvas
-
-## Dateistruktur
-
-```
-Test/
-├── index.html      # Haupt-HTML-Datei
-├── style.css       # Styling und Layout
-├── app.js          # Spiellogik
-└── README.md       # Diese Datei
-```
-
-## Features im Detail
-
-### Farbpalette
-- 6 verschiedene Farben mit eindeutigen Nummern
-- Visuelle Anzeige der ausgewählten Farbe
-- Markierung von vollständig ausgefüllten Farben
-
-### Canvas
-- SVG-basiertes Zeichnen für scharfe Grafiken
-- Verschiedene geometrische Formen (Rechtecke und Kreise)
-- Nummerierte Bereiche für einfache Zuordnung
-
-### Fortschrittsverfolgung
-- Echtzeit-Prozentanzeige
-- Visuelle Fortschrittsleiste
-- Vollständigkeitsprüfung
-
-## Zukünftige Erweiterungen
-
-Mögliche Verbesserungen für die Zukunft:
-- Mehrere Schwierigkeitsstufen
-- Verschiedene Bilder zur Auswahl
-- Timer für Wettbewerbsmodus
-- Speicherfunktion für den Spielfortschritt
-- Bildupload für eigene Malen-nach-Zahlen Vorlagen
-- Multiplayer-Modus
-
-## Browser-Kompatibilität
-
-Die App funktioniert in allen modernen Browsern:
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-
-## Lizenz
-
-Dieses Projekt ist Open Source und kann frei verwendet werden.
-
-## Autor
-
-Erstellt mit Claude Code
-
----
-
-Viel Spaß beim Malen! 🎨
+Viel Spaß beim Verteidigen des Labors! 🧬
